@@ -9,7 +9,7 @@ if [[ ! -x "${backend}" ]]; then
   elif command -v pkg-config >/dev/null 2>&1; then
     backend="$(command -v pkg-config)"
   else
-    echo >&2 "arm-vita-eabi-pkg-config: pkgconf is not installed"
+    echo >&2 "arm-vita-eabi-pkg-config: pkg-config is not installed. Aborting."
     exit 127
   fi
 fi

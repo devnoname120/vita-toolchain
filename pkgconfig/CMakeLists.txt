@@ -1,5 +1,5 @@
 if(WIN32)
-  add_executable(arm-vita-eabi-pkg-config arm-vita-eabi-pkg-config.c)
+  add_executable(arm-vita-eabi-pkg-config arm-vita-eabi-pkg-config-windows.c)
   target_compile_features(arm-vita-eabi-pkg-config PRIVATE c_std_99)
   if(MINGW)
     target_link_options(arm-vita-eabi-pkg-config PRIVATE -municode)

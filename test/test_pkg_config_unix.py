@@ -107,6 +107,15 @@ def main() -> None:
             "--static",
         ]
 
+        isolated_bin = root / "isolated-bin"
+        isolated_bin.mkdir()
+        bash = shutil.which("bash")
+        assert bash is not None
+        (isolated_bin / "bash").symlink_to(bash)
+        result, _ = invoke(wrapper, {**env, "PATH": str(isolated_bin)}, "--libs", "sample")
+        assert result.returncode == 127
+        assert result.stderr.strip() == "arm-vita-eabi-pkg-config: pkg-config is not installed. Aborting."
+
     print("test_pkg_config_unix: ALL TESTS PASSED")
 
 
