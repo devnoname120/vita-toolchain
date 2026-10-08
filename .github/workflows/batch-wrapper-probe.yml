@@ -71,6 +71,7 @@ jobs:
           if ($output -notmatch 'ARG:3=--define-variable=amp=a' -or $output -notmatch "'b' is not recognized") {
             throw 'The batch-wrapper failure did not match the expected cmd.exe argument split'
           }
+          exit 0
 
       - name: Probe Git Bash lookup and path handling
         shell: bash
