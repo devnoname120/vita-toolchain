@@ -1,0 +1,71 @@
+name: Batch wrapper probe
+
+on:
+  push:
+    branches:
+      - probe/windows-batch-wrapper-20261008
+
+jobs:
+  probe:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Prepare batch wrapper and capture backend
+        shell: pwsh
+        run: |
+          cmake -S test/pkgconfig-windows -B build-probe -DVITA_TOOLCHAIN_SOURCE="$PWD"
+          cmake --build build-probe --config Release
+
+          $sdk = Join-Path $env:RUNNER_TEMP 'Vita SDK batch probe'
+          $bin = Join-Path $sdk 'bin'
+          New-Item -ItemType Directory -Force -Path $bin | Out-Null
+          $capture = Get-ChildItem build-probe -Recurse -Filter pkgconf-capture.exe | Select-Object -First 1
+          if (-not $capture) { throw 'pkgconf-capture.exe not found' }
+          Copy-Item $capture.FullName (Join-Path $bin 'pkgconf.exe')
+
+          @'
+          @echo off
+          setlocal DisableDelayedExpansion
+          for %%I in ("%~dp0..") do set "VITASDK=%%~fI"
+          set "VITASDK=%VITASDK:\=/%"
+          set "PKG_CONFIG_DIR="
+          set "PKG_CONFIG_PATH="
+          set "PKG_CONFIG_SYSROOT_DIR="
+          set "PKG_CONFIG_LIBDIR=%VITASDK%/arm-vita-eabi/lib/pkgconfig;%VITASDK%/arm-vita-eabi/share/pkgconfig"
+          set "BACKEND=%~dp0pkgconf.exe"
+          if "%~1"=="--version" goto version
+          "%BACKEND%" "--define-variable=VITASDK=%VITASDK%" --define-prefix --static %*
+          exit /b %errorlevel%
+          :version
+          "%BACKEND%" --version
+          exit /b %errorlevel%
+          '@ | Set-Content -Encoding ascii (Join-Path $bin 'arm-vita-eabi-pkg-config.cmd')
+
+          "BATCH_PROBE_BIN=$bin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Invoke from cmd.exe without extension
+        shell: cmd
+        run: |
+          where arm-vita-eabi-pkg-config
+          arm-vita-eabi-pkg-config --libs sample "--define-variable=note=a b"
+
+      - name: Invoke from PowerShell without extension
+        shell: pwsh
+        run: |
+          Get-Command arm-vita-eabi-pkg-config
+          & arm-vita-eabi-pkg-config --libs sample '--define-variable=note=a b'
+
+      - name: Invoke from Git Bash without extension
+        shell: bash
+        run: |
+          command -v arm-vita-eabi-pkg-config
+          arm-vita-eabi-pkg-config --libs sample '--define-variable=note=a b'
+
+      - name: Show batch metacharacter behavior
+        shell: pwsh
+        run: |
+          & arm-vita-eabi-pkg-config '--define-variable=amp=a&b'
