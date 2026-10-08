@@ -62,8 +62,12 @@ jobs:
       - name: Invoke from Git Bash without extension
         shell: bash
         run: |
-          command -v arm-vita-eabi-pkg-config
-          arm-vita-eabi-pkg-config --libs sample '--define-variable=note=a b'
+          if command -v arm-vita-eabi-pkg-config; then
+            echo 'Git Bash unexpectedly resolved the extensionless batch command' >&2
+            exit 1
+          fi
+          command -v arm-vita-eabi-pkg-config.cmd
+          arm-vita-eabi-pkg-config.cmd --libs sample '--define-variable=note=a b'
 
       - name: Show batch metacharacter behavior
         shell: pwsh
