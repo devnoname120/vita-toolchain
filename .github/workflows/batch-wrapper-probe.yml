@@ -62,7 +62,15 @@ jobs:
       - name: Show batch metacharacter behavior
         shell: pwsh
         run: |
-          & arm-vita-eabi-pkg-config '--define-variable=amp=a&b'
+          $output = (& arm-vita-eabi-pkg-config '--define-variable=amp=a&b' 2>&1 | Out-String)
+          $result = $LASTEXITCODE
+          $output
+          if ($result -eq 0) {
+            throw 'The batch wrapper unexpectedly preserved an ampersand argument'
+          }
+          if ($output -notmatch 'ARG:3=--define-variable=amp=a' -or $output -notmatch "'b' is not recognized") {
+            throw 'The batch-wrapper failure did not match the expected cmd.exe argument split'
+          }
 
       - name: Probe Git Bash lookup and path handling
         shell: bash
