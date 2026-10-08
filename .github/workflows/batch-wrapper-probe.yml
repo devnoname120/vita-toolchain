@@ -59,7 +59,12 @@ jobs:
           Get-Command arm-vita-eabi-pkg-config
           & arm-vita-eabi-pkg-config --libs sample '--define-variable=note=a b'
 
-      - name: Invoke from Git Bash without extension
+      - name: Show batch metacharacter behavior
+        shell: pwsh
+        run: |
+          & arm-vita-eabi-pkg-config '--define-variable=amp=a&b'
+
+      - name: Probe Git Bash lookup and path handling
         shell: bash
         run: |
           if command -v arm-vita-eabi-pkg-config; then
@@ -67,9 +72,12 @@ jobs:
             exit 1
           fi
           command -v arm-vita-eabi-pkg-config.cmd
-          arm-vita-eabi-pkg-config.cmd --libs sample '--define-variable=note=a b'
-
-      - name: Show batch metacharacter behavior
-        shell: pwsh
-        run: |
-          & arm-vita-eabi-pkg-config '--define-variable=amp=a&b'
+          set +e
+          output=$(arm-vita-eabi-pkg-config.cmd --libs sample '--define-variable=note=a b' 2>&1)
+          result=$?
+          set -e
+          printf '%s\n' "$output"
+          if [[ $result -eq 0 ]]; then
+            echo 'Git Bash unexpectedly executed the batch wrapper from a path with spaces' >&2
+            exit 1
+          fi
